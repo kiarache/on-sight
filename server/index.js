@@ -35,8 +35,15 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist', 'index.html'));
 });
 
-// Start Server
-app.listen(port, async () => {
-  console.log(`🚀 Server running on http://localhost:${port}`);
-  await initializeSystem();
-});
+// Initialize System (Serverless 환경에서도 실행되도록 listen 밖으로 이동)
+initializeSystem();
+
+// Start Server (로컬 실행용)
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  app.listen(port, () => {
+    console.log(`🚀 Server running on http://localhost:${port}`);
+  });
+}
+
+// Vercel용 Export
+module.exports = app;
