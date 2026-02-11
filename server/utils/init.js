@@ -5,13 +5,6 @@ const path = require('path');
 
 async function initializeSystem() {
   try {
-    // 저장 폴더 생성
-    const uploadDir = path.join(__dirname, '../../uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-      console.log('📁 업로드 저장 폴더 생성 완료 (/uploads)');
-    }
-
     const adminUsername = 'admin';
     const defaultPassword = 'admin1234';
     

@@ -1,6 +1,7 @@
 const prisma = require('../config/db');
+const { put } = require('@vercel/blob');
 
-const getProjects = async (req, res) => {
+const getProjects = async (req, res, next) => {
   try {
     const projects = await prisma.project.findMany({ orderBy: { lastUpdated: 'desc' } });
     res.json(projects);
@@ -9,7 +10,7 @@ const getProjects = async (req, res) => {
   }
 };
 
-const upsertProject = async (req, res) => {
+const upsertProject = async (req, res, next) => {
   const p = req.body;
   try {
     // 진척도 계산: 완료 개소 / 프로젝트 전체 개소
@@ -35,15 +36,21 @@ const upsertProject = async (req, res) => {
   }
 };
 
-const addReport = async (req, res) => {
+const addReport = async (req, res, next) => {
   const { projectId, report } = req.body;
   if (!projectId || !report) {
-    return res.status(400).json({ error: '필수 데이터 누락' });
+    const err = new Error('필수 데이터 누락');
+    err.status = 400;
+    return next(err);
   }
 
   try {
     const project = await prisma.project.findUnique({ where: { id: projectId } });
-    if (!project) return res.status(404).json({ error: '프로젝트를 찾을 수 없습니다.' });
+    if (!project) {
+      const err = new Error('프로젝트를 찾을 수 없습니다.');
+      err.status = 404;
+      return next(err);
+    }
 
     // Handle reports JSON
     let currentReports = project.reports;
@@ -63,11 +70,20 @@ const addReport = async (req, res) => {
     let finalReport = typeof report === 'string' ? JSON.parse(report) : report;
     
     if (req.files && req.files.length > 0) {
-      // req.files에는 업로드된 파일 배열이 들어있음
-      // finalReport.photos 배열의 url을 실제 서버 경로로 교체
+      // Vercel Blob 업로드 처리 (Multer memoryStorage 내 데이터를 사용)
+      const uploadPromises = req.files.map(async (file, idx) => {
+        const blob = await put(`reports/${Date.now()}-${file.originalname}`, file.buffer, {
+          access: 'public',
+        });
+        return { index: idx, url: blob.url };
+      });
+
+      const uploadedResults = await Promise.all(uploadPromises);
+      
+      // finalReport.photos 배열의 url을 Vercel Blob URL로 교체
       finalReport.photos = finalReport.photos.map((p, idx) => {
-        const file = req.files[idx];
-        return file ? { ...p, url: `/uploads/${file.filename}` } : p;
+        const result = uploadedResults.find(r => r.index === idx);
+        return result ? { ...p, url: result.url } : p;
       });
     }
 
@@ -80,8 +96,6 @@ const addReport = async (req, res) => {
     if (totalSites > 0) {
       const completedCount = currentSites.filter(site => completedSiteIds.has(site.id)).length;
       newProgress = Math.round((completedCount / totalSites) * 100);
-    } else {
-        newProgress = 0;
     }
 
     const updatedProject = await prisma.project.update({
