@@ -36,7 +36,8 @@ app.get('*', (req, res) => {
 });
 
 // Initialize System (Serverless 환경에서도 실행되도록 listen 밖으로 이동)
-initializeSystem();
+// Vercel은 cold start마다 실행되므로, 여기서의 에러가 전체 함수 종료로 이어지지 않게 주의
+initializeSystem().catch(err => console.error('[INIT ERROR]', err));
 
 // Start Server (로컬 실행용)
 if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
