@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Pretendard', 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+:root {
+  background-color: #f8fafc;
+  color: #0f172a;
+  /* 기본 폰트 크기 상향 조정 (가독성 개선) */
+  font-size: 18px; 
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+}
+
+/* 유틸리티 클래스 오버라이드 또는 전역 가독성 설정 */
+h1 { font-size: 1.8rem !important; }
+h2 { font-size: 1.5rem !important; }
+h3 { font-size: 1.25rem !important; }
+
+/* 작은 글씨가 너무 작지 않도록 보정 */
+.text-xs { font-size: 0.85rem !important; }
+.text-sm { font-size: 1rem !important; }
+.text-base { font-size: 1.125rem !important; }
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}

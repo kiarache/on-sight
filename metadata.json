@@ -1,0 +1,9 @@
+{
+  "name": "ON-Sight (오엔사이트)",
+  "description": "네트워크 구축 현장 관리 및 증적 자동화 플랫폼",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "themeColor": "#4f46e5",
+  "backgroundColor": "#f8fafc"
+}

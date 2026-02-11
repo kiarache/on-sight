@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("TECHNICIAN")
+  createdAt    DateTime @default(now())
+}
+
+model Project {
+  id             String   @id @default(uuid())
+  name           String
+  status         String   @default("PLANNED")
+  lastUpdated    DateTime @updatedAt
+  reports        Json     @default("[]")
+  location       String?
+  partnerCompany String?
+  progress       Int      @default(0)
+  sites          Json     @default("[]")
+}
+
+model Partner {
+  id          String  @id @default(uuid())
+  name        String
+  technicians Json    @default("[]")
+  address     String?
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  timestamp  DateTime @default(now())
+  userId     String
+  username   String
+  action     String
+  targetType String
+  targetId   String?
+  details    String?
+}
+
+model SystemSettings {
+  id        String   @id @default("default")
+  terms     String
+  updatedAt DateTime @updatedAt
+}
