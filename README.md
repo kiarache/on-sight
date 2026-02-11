@@ -80,4 +80,4 @@ docker-compose up --build
 - **Frontend**: React, TypeScript, Tailwind CSS, Lucide React
 - **Backend**: Node.js, Express, Multer
 - **Database**: PostgreSQL, Prisma (ORM)
-- **Infra**: Docker, Docker Compose
+- **Infra**: Docker, Docker Compose...
