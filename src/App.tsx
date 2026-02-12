@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Link, useNavigate, useLocation, Navigate, NavLink } from 'react-router-dom';
 import { LayoutDashboard, ClipboardList, Camera, Bell, Settings, LogOut, ChevronRight, Menu, X, Plus, Info, Briefcase, Lock, ShieldCheck, Trash2, Key, AlertCircle, RefreshCw, Shield, User as UserIcon, Home, UserPlus, Users } from 'lucide-react';
 import { INITIAL_PROJECTS, INITIAL_PARTNERS } from '@/config/constants';
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import { SpeedInsights } from "@vercel/speed-insights/react"
 import { Project, ProjectStatus, Partner, Technician } from '@/types';
 import { db, User } from '@/services/db';
 import AdminDashboard from '@/pages/AdminDashboard';
@@ -17,8 +17,6 @@ import SecuritySettings from '@/pages/SecuritySettings';
 import TechnicianRegistration from '@/pages/TechnicianRegistration';
 import AccountSettings from '@/pages/AccountSettings';
 import UserManagement from '@/pages/UserManagement';
-
-<SpeedInsights/>
 
 const LoginModal = ({ onLogin, onCancel }: { onLogin: (user: User) => void, onCancel: () => void }) => {
   const [username, setUsername] = useState('');
@@ -402,6 +400,7 @@ const App: React.FC = () => {
         {showLoginModal && <LoginModal onLogin={handleLogin} onCancel={() => setShowLoginModal(false)} />}
         <BottomNav currentUser={currentUser} />
       </div>
+      <SpeedInsights />
     </HashRouter>
   );
 };
