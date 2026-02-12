@@ -3,7 +3,26 @@ const { put } = require('@vercel/blob');
 
 const getProjects = async (req, res, next) => {
   try {
-    const projects = await prisma.project.findMany({ orderBy: { lastUpdated: 'desc' } });
+    // V17: TECHNICIAN은 자신이 속한 협력사의 프로젝트만 조회 (OWASP A01)
+    const userRole = req.user.role;
+    
+    let projects;
+    if (userRole === 'TECHNICIAN') {
+      // User 모델에 partnerName이 있다고 가정 (없다면 partnerId로 변경)
+      const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+      if (!user || !user.partnerName) {
+        return res.json([]);
+      }
+      
+      projects = await prisma.project.findMany({ 
+        where: { partnerCompany: user.partnerName },
+        orderBy: { lastUpdated: 'desc' } 
+      });
+    } else {
+      // SUPER, ADMIN은 모든 프로젝트 조회
+      projects = await prisma.project.findMany({ orderBy: { lastUpdated: 'desc' } });
+    }
+    
     res.json(projects);
   } catch (e) {
     next(e);

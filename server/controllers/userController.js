@@ -26,6 +26,12 @@ const createUser = async (req, res) => {
     if (!u.password) {
       return res.status(400).json({ error: '비밀번호는 필수 항목입니다.' });
     }
+    
+    // V14: 비밀번호 강도 검증
+    if (u.password.length < 8) {
+      return res.status(400).json({ error: '비밀번호는 최소 8자 이상이어야 합니다.' });
+    }
+    
     const passwordHash = await bcrypt.hash(u.password, 10);
     const userData = {
       id: u.id || `user-${Date.now()}`,
@@ -117,6 +123,10 @@ const updateProfile = async (req, res) => {
     const updateData = { name };
     
     if (password) {
+      // V14: 비밀번호 변경 시 강도 검증
+      if (password.length < 8) {
+        return res.status(400).json({ error: '비밀번호는 최소 8자 이상이어야 합니다.' });
+      }
       updateData.passwordHash = await bcrypt.hash(password, 10);
     }
 

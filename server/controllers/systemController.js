@@ -2,7 +2,8 @@ const prisma = require('../config/db');
 
 const getHealth = async (req, res) => {
   try {
-    // 실제 데이터베이스 연결 확인
+    // V13: SQL Injection 방어 - Prisma $queryRaw는 템플릿 리터럴로 자동 이스케이프
+    // 동적 쿼리 작성 시 반드시 파라미터화 사용: prisma.$queryRaw`SELECT * FROM users WHERE id = ${userId}`
     await prisma.$queryRaw`SELECT 1`;
     res.json({ status: 'ok', database: 'ok' });
   } catch (e) {

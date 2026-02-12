@@ -50,6 +50,20 @@ const register = async (req, res, next) => {
       return next(err);
     }
     
+    // V14: 비밀번호 강도 검증 (OWASP A07)
+    if (u.password.length < 8) {
+      const err = new Error('비밀번호는 최소 8자 이상이어야 합니다.');
+      err.status = 400;
+      return next(err);
+    }
+    
+    // 영문자+숫자 혼용 권장 (경고)
+    const hasLetter = /[a-zA-Z]/.test(u.password);
+    const hasNumber = /[0-9]/.test(u.password);
+    if (!hasLetter || !hasNumber) {
+      console.warn(`[SECURITY] Weak password registered for user: ${u.username}`);
+    }
+    
     const passwordHash = await bcrypt.hash(u.password, 10);
     
     const userData = {
