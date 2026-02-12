@@ -15,16 +15,16 @@ const getAuditLogs = async (req, res, next) => {
 const createAuditLog = async (req, res, next) => {
   const logData = req.body;
   try {
+    // 보안: userId/username은 JWT 토큰에서 추출 (클라이언트 값 무시)
     const log = await prisma.auditLog.create({
       data: {
-        id: logData.id,
-        userId: logData.userId,
-        username: logData.username,
+        userId: req.user.id,
+        username: req.user.username,
         action: logData.action,
         targetType: logData.targetType,
-        targetId: logData.targetId,
-        details: logData.details,
-        timestamp: logData.timestamp || new Date()
+        targetId: logData.targetId || null,
+        details: logData.details || null,
+        timestamp: new Date()
       }
     });
     res.json(log);

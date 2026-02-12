@@ -24,10 +24,22 @@ const upsertProject = async (req, res, next) => {
       progress = Math.round((completedCount / sites.length) * 100);
     }
 
+    // 보안: 허용된 필드만 명시적으로 추출 (Mass Assignment 방지)
+    const allowedData = {
+      id: p.id,
+      name: p.name,
+      status: p.status,
+      location: p.location || null,
+      partnerCompany: p.partnerCompany || null,
+      sites: p.sites,
+      reports: p.reports,
+      progress
+    };
+
     const project = await prisma.project.upsert({
       where: { id: p.id },
-      update: { ...p, progress },
-      create: { ...p, progress }
+      update: allowedData,
+      create: allowedData
     });
     res.json(project);
   } catch (e) {

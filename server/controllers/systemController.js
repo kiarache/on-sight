@@ -53,7 +53,9 @@ const downloadBackup = async (req, res, next) => {
   try {
     // 모든 테이블 데이터 수집
     const [users, projects, partners, settings, logs] = await Promise.all([
-      prisma.user.findMany(),
+      prisma.user.findMany({
+        select: { id: true, username: true, name: true, role: true, createdAt: true }
+      }),
       prisma.project.findMany(),
       prisma.partner.findMany(),
       prisma.systemSettings.findMany(),

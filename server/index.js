@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 const { initializeSystem } = require('./utils/init');
 const apiRoutes = require('./routes');
@@ -18,8 +20,36 @@ if (!process.env.DATABASE_URL) {
   console.error('❌ ERROR: DATABASE_URL is not defined in .env file.');
 }
 
-// Middleware
-app.use(cors());
+// 보안: HTTP 헤더 강화
+app.use(helmet({ contentSecurityPolicy: false }));
+
+// 보안: CORS 허용 오리진 제한
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim())
+  : ['http://localhost:5173', 'http://localhost:3001'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // 서버 내부 요청(origin이 undefined)은 허용
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS 정책에 의해 차단되었습니다.'));
+    }
+  },
+  credentials: true
+}));
+
+// 보안: 전역 Rate Limiting (15분당 100회)
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+app.use('/api', globalLimiter);
+
 app.use(express.json({ limit: '10mb' }));
 
 // API Routes

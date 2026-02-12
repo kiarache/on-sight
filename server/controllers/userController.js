@@ -22,10 +22,11 @@ const createUser = async (req, res) => {
       return res.status(403).json({ error: '최고 관리자 계정을 생성할 권한이 없습니다.' });
     }
 
-    let passwordHash = u.passwordHash;
-    if (u.password) {
-      passwordHash = await bcrypt.hash(u.password, 10);
+    // 보안: 반드시 password를 통해 해시 생성 (passwordHash 직접 전달 차단)
+    if (!u.password) {
+      return res.status(400).json({ error: '비밀번호는 필수 항목입니다.' });
     }
+    const passwordHash = await bcrypt.hash(u.password, 10);
     const userData = {
       id: u.id || `user-${Date.now()}`,
       username: u.username,
@@ -81,6 +82,11 @@ const resetPassword = async (req, res) => {
   const { newPassword } = req.body;
   const requesterRole = req.user.role;
 
+  // 보안: newPassword 필수 + 최소 길이 검증
+  if (!newPassword || newPassword.length < 4) {
+    return res.status(400).json({ error: '새 비밀번호는 최소 4자 이상이어야 합니다.' });
+  }
+
   try {
     const targetUser = await prisma.user.findUnique({ where: { id } });
     if (!targetUser) return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
@@ -90,7 +96,7 @@ const resetPassword = async (req, res) => {
       return res.status(403).json({ error: '최고 관리자의 비밀번호를 초기화할 권한이 없습니다.' });
     }
 
-    const passwordHash = await bcrypt.hash(newPassword || '1234', 10);
+    const passwordHash = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({
       where: { id },
       data: { passwordHash }
