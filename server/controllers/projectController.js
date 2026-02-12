@@ -103,8 +103,19 @@ const addReport = async (req, res, next) => {
     if (req.files && req.files.length > 0) {
       // Vercel Blob 업로드 처리 (Multer memoryStorage 내 데이터를 사용)
       const uploadPromises = req.files.map(async (file, idx) => {
-        const blob = await put(`reports/${Date.now()}-${file.originalname}`, file.buffer, {
+        // K5: 파일명 경로 조작 방지 (KISA 입력값 검증)
+        let sanitizedFilename = file.originalname
+          .replace(/\.\./g, '')  // .. 제거
+          .replace(/[\/\\]/g, '') // / 및 \ 제거
+          .substring(0, 255);     // 길이 제한
+        
+        if (!sanitizedFilename || sanitizedFilename.length === 0) {
+          sanitizedFilename = `file_${Date.now()}`; // Fallback if sanitization results in empty string
+        }
+
+        const blob = await put(`reports/${Date.now()}-${sanitizedFilename}`, file.buffer, {
           access: 'public',
+          contentType: file.mimetype
         });
         return { index: idx, url: blob.url };
       });

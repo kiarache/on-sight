@@ -22,6 +22,12 @@ const createUser = async (req, res) => {
       return res.status(403).json({ error: '최고 관리자 계정을 생성할 권한이 없습니다.' });
     }
 
+      // K2: username 입력값 검증
+      const usernameRegex = /^[a-zA-Z0-9]{4,20}$/;
+      if (!usernameRegex.test(u.username)) {
+        return res.status(400).json({ error: `유효하지 않은 아이디: ${u.username} (영문자+숫자 4-20자)` });
+      }
+      
     // 보안: 반드시 password를 통해 해시 생성 (passwordHash 직접 전달 차단)
     if (!u.password) {
       return res.status(400).json({ error: '비밀번호는 필수 항목입니다.' });
@@ -127,6 +133,14 @@ const updateProfile = async (req, res) => {
       if (password.length < 8) {
         return res.status(400).json({ error: '비밀번호는 최소 8자 이상이어야 합니다.' });
       }
+      
+      // K3: 비밀번호 복잡도 검증
+      const hasLetter = /[a-zA-Z]/.test(password);
+      const hasNumber = /[0-9]/.test(password);
+      if (!hasLetter || !hasNumber) {
+        return res.status(400).json({ error: '비밀번호는 영문자와 숫자를 혼용해야 합니다.' });
+      }
+      
       updateData.passwordHash = await bcrypt.hash(password, 10);
     }
 
