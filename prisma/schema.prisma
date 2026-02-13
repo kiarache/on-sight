@@ -13,6 +13,8 @@ model User {
   passwordHash String
   name         String
   role         String   @default("TECHNICIAN")
+  partnerId    String?
+  partnerName  String?
   createdAt    DateTime @default(now())
 }
 

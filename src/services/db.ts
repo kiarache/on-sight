@@ -34,8 +34,8 @@ class DBService {
       clearTimeout(timeoutId);
 
       if (response.status === 401 || response.status === 403) {
-        // 로그인 요청(/login)에서 401이 발생한 경우는 세션 만료가 아닌 로그인 정보 불일치이므로 예외 처리
-        if (endpoint !== '/login' && endpoint !== '/check-username') {
+        // 로그인/회원가입 요청에서 401이 발생한 경우는 세션 만료가 아닌 요청 실패이므로 예외 처리
+        if (endpoint !== '/login' && endpoint !== '/check-username' && endpoint !== '/register') {
           this.logout();
           window.location.hash = '/';
           throw new Error('보안 세션이 만료되었습니다. 안전한 이용을 위해 다시 로그인해 주세요.');
