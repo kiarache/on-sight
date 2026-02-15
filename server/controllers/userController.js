@@ -121,45 +121,67 @@ const resetPassword = async (req, res) => {
   }
 };
 
-const updateProfile = async (req, res) => {
-  const { name, password } = req.body;
+const updateProfile = async (req, res, next) => {
+  const { name, password, currentPassword } = req.body;
   const userId = req.user.id;
 
   try {
     const updateData = { name };
-    
+
     if (password) {
+      // 비밀번호 변경 시 현재 비밀번호 필수 확인
+      if (!currentPassword) {
+        return res.status(400).json({ error: '현재 비밀번호를 입력해주세요.' });
+      }
+
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user) {
+        return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+      }
+
+      const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!isMatch) {
+        return res.status(400).json({ error: '현재 비밀번호가 올바르지 않습니다.' });
+      }
+
       // V14: 비밀번호 변경 시 강도 검증
       if (password.length < 8) {
         return res.status(400).json({ error: '비밀번호는 최소 8자 이상이어야 합니다.' });
       }
-      
+
       // K3: 비밀번호 복잡도 검증
       const hasLetter = /[a-zA-Z]/.test(password);
       const hasNumber = /[0-9]/.test(password);
       if (!hasLetter || !hasNumber) {
         return res.status(400).json({ error: '비밀번호는 영문자와 숫자를 혼용해야 합니다.' });
       }
-      
+
       updateData.passwordHash = await bcrypt.hash(password, 10);
     }
 
-    const user = await prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: updateData,
       select: { id: true, username: true, name: true, role: true }
     });
 
-    res.json(user);
+    res.json(updatedUser);
   } catch (e) {
     e.status = 400;
     next(e);
   }
 };
 
-const deleteProfile = async (req, res) => {
+const deleteProfile = async (req, res, next) => {
   const userId = req.user.id;
   try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (user && user.role === 'SUPER') {
+      const superCount = await prisma.user.count({ where: { role: 'SUPER' } });
+      if (superCount <= 1) {
+        return res.status(400).json({ error: '유일한 최고 관리자 계정은 탈퇴할 수 없습니다.' });
+      }
+    }
     await prisma.user.delete({ where: { id: userId } });
     res.json({ success: true });
   } catch (e) {

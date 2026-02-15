@@ -25,3 +25,11 @@ postgres_data/
 *.njsproj
 *.sln
 *.sw?
+
+# AI agent directories
+.agent/
+.claude/
+
+# Screenshots & results
+*.png
+results/

@@ -3,7 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Link, useNavigate, useLocation, Navigate, NavLink } from 'react-router-dom';
 import { LayoutDashboard, ClipboardList, Camera, Bell, Settings, LogOut, ChevronRight, Menu, X, Plus, Info, Briefcase, Lock, ShieldCheck, Trash2, Key, AlertCircle, RefreshCw, Shield, User as UserIcon, Home, UserPlus, Users } from 'lucide-react';
 import { INITIAL_PROJECTS, INITIAL_PARTNERS } from '@/config/constants';
-import { SpeedInsights } from "@vercel/speed-insights/react"
+import { SpeedInsights } from "@vercel/speed-insights/react";
+import { ToastProvider, useToast } from '@/components/Toast';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { Project, ProjectStatus, Partner, Technician } from '@/types';
 import { db, User } from '@/services/db';
 import AdminDashboard from '@/pages/AdminDashboard';
@@ -61,7 +63,7 @@ const LoginModal = ({ onLogin, onCancel }: { onLogin: (user: User) => void, onCa
         
         <div className="space-y-3">
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Account ID</label>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">아이디</label>
             <input 
               type="text" 
               autoFocus
@@ -74,7 +76,7 @@ const LoginModal = ({ onLogin, onCancel }: { onLogin: (user: User) => void, onCa
             />
           </div>
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Password</label>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">비밀번호</label>
             <input 
               type="password" 
               disabled={loading}
@@ -198,7 +200,8 @@ const LoginLanding = ({ onShowLogin }: { onShowLogin: () => void }) => (
   </div>
 );
 
-const App: React.FC = () => {
+const AppInner: React.FC = () => {
+  const { toast } = useToast();
   const [currentUser, setCurrentUser] = useState<User | null>(db.getCurrentUser());
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -243,14 +246,14 @@ const App: React.FC = () => {
     try {
       await db.save('projects', p); 
       setProjects(prev => [p, ...prev]); 
-    } catch(e) { alert('프로젝트 저장 실패: ' + (e as any).message); }
+    } catch(e) { toast('프로젝트 저장 실패: ' + (e as any).message, 'error'); }
   };
   
   const addPartner = async (p: Partner) => { 
     try {
       await db.save('partners', p); 
       setPartners(prev => [...prev, p]); 
-    } catch(e) { alert('협력사 저장 실패'); }
+    } catch(e) { toast('협력사 저장 실패', 'error'); }
   };
 
   const deletePartner = async (id: string) => { 
@@ -267,14 +270,14 @@ const App: React.FC = () => {
     try {
       await db.save('partners', p);
       setPartners(prev => prev.map(item => item.id === p.id ? p : item));
-    } catch(e) { alert('협력사 수정 실패'); }
+    } catch(e) { toast('협력사 수정 실패', 'error'); }
   };
 
   const updateProject = async (updated: Project) => {
     try {
       await db.save('projects', updated);
       setProjects(prev => prev.map(item => item.id === updated.id ? updated : item));
-    } catch(e) { alert('프로젝트 업데이트 실패'); }
+    } catch(e) { toast('프로젝트 업데이트 실패', 'error'); }
   };
 
   const updateStatus = async (id: string, status: ProjectStatus) => {
@@ -291,14 +294,14 @@ const App: React.FC = () => {
       if (!partner) {
           const allPartners = await db.getAll<Partner>('partners');
           partner = allPartners.find(p => p.id === partnerId);
-          if (!partner) return alert('협력사를 찾을 수 없습니다.');
+          if (!partner) return toast('협력사를 찾을 수 없습니다.', 'error');
           setPartners(allPartners);
       }
 
       const updated = { ...partner, technicians: [...partner.technicians, tech] };
       await db.save('partners', updated);
       setPartners(prev => prev.map(p => p.id === partnerId ? updated : p));
-    } catch(e) { alert('기술자 등록 실패'); }
+    } catch(e) { toast('기술자 등록 실패', 'error'); }
   };
 
   const addReport = async (projectId: string, report: any) => {
@@ -306,7 +309,7 @@ const App: React.FC = () => {
       const updatedProject = await db.submitReport(projectId, report);
       setProjects(prev => prev.map(item => item.id === projectId ? updatedProject : item));
     } catch(e: any) { 
-        alert('보고서 제출 실패: ' + e.message); 
+        toast('보고서 제출 실패: ' + e.message, 'error');
     }
   };
 
@@ -326,7 +329,7 @@ const App: React.FC = () => {
     try {
       await db.save('projects', updated);
       setProjects(prev => prev.map(item => item.id === projectId ? updated : item));
-    } catch(e) { alert('사이트 업데이트 실패'); }
+    } catch(e) { toast('사이트 업데이트 실패', 'error'); }
   };
 
 
@@ -404,5 +407,13 @@ const App: React.FC = () => {
     </HashRouter>
   );
 };
+
+const App: React.FC = () => (
+  <ErrorBoundary>
+    <ToastProvider>
+      <AppInner />
+    </ToastProvider>
+  </ErrorBoundary>
+);
 
 export default App;

@@ -25,6 +25,7 @@ import {
   X as XIcon
 } from 'lucide-react';
 import JSZip from 'jszip';
+import { useToast } from '@/components/Toast';
 
 interface Props {
   projects: Project[];
@@ -35,6 +36,7 @@ interface Props {
 }
 
 const ProjectDetail: React.FC<Props> = ({ projects, partners, onUpdateStatus, onUpdateSites, onUpdateProject }) => {
+  const { toast } = useToast();
   const { id } = useParams<{ id: string }>();
   const project = projects.find(p => p.id === id);
   const [isExporting, setIsExporting] = useState(false);
@@ -66,7 +68,7 @@ const ProjectDetail: React.FC<Props> = ({ projects, partners, onUpdateStatus, on
 
   const handleAddSite = () => {
     if (!newSite.name.trim() || !newSite.address.trim()) {
-      alert('개소명과 주소를 모두 입력해주세요.');
+      toast('개소명과 주소를 모두 입력해주세요.', 'error');
       return;
     }
     const site: Site = {
@@ -126,7 +128,7 @@ const ProjectDetail: React.FC<Props> = ({ projects, partners, onUpdateStatus, on
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("ZIP Export Error:", error);
-      alert("파일 생성 중 오류가 발생했습니다.");
+      toast("파일 생성 중 오류가 발생했습니다.", 'error');
     } finally {
       setIsExporting(false);
     }

@@ -1,20 +1,50 @@
+
 import React, { useState, useEffect } from 'react';
-import { 
-  ShieldCheck, 
-  Settings, 
-  Save, 
-  Server, 
-  Database, 
-  Globe, 
+import {
+  ShieldCheck,
+  Settings,
+  Save,
+  Server,
+  Database,
+  Globe,
   RefreshCw,
   FileText,
   Info,
   Download,
   Power,
-  AlertTriangle
+  AlertTriangle,
+  History,
+  User,
+  Activity
 } from 'lucide-react';
+import { useToast } from '@/components/Toast';
+import Button from '@/components/Button';
+import Modal from '@/components/Modal';
+import Table from '@/components/Table';
+import Badge from '@/components/Badge';
+import Pagination from '@/components/Pagination';
+import EmptyState from '@/components/EmptyState';
+
+interface AuditLog {
+  id: string;
+  timestamp: string;
+  userId: string;
+  username: string;
+  action: string;
+  targetType: string;
+  targetId: string | null;
+  details: string | null;
+}
+
+interface PaginationData {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
 
 const SecuritySettings: React.FC = () => {
+  const { toast } = useToast();
   const [terms, setTerms] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [health, setHealth] = useState({
@@ -23,6 +53,12 @@ const SecuritySettings: React.FC = () => {
     frontend: 'online'
   });
   const [lastCheck, setLastCheck] = useState(new Date());
+
+  // Audit Logs State
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [logsPagination, setLogsPagination] = useState<PaginationData | null>(null);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logsPage, setLogsPage] = useState(1);
 
   const fetchStatus = () => {
     setLastCheck(new Date());
@@ -49,10 +85,34 @@ const SecuritySettings: React.FC = () => {
       .catch(() => {});
   };
 
+  const fetchAuditLogs = async (page: number) => {
+    setLogsLoading(true);
+    try {
+      const res = await fetch(`/api/auditLogs?page=${page}&limit=10`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('onsight_token')}`
+        }
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setLogs(data.logs);
+      setLogsPagination(data.pagination);
+    } catch (err) {
+      console.error('Failed to fetch audit logs:', err);
+    } finally {
+      setLogsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchTerms();
     fetchStatus();
+    fetchAuditLogs(logsPage);
   }, []);
+
+  useEffect(() => {
+    fetchAuditLogs(logsPage);
+  }, [logsPage]);
 
   const handleSaveTerms = async () => {
     setIsSaving(true);
@@ -66,10 +126,10 @@ const SecuritySettings: React.FC = () => {
         body: JSON.stringify({ terms })
       });
       if (res.ok) {
-        alert('시스템 약관이 저장되었습니다.');
+        toast('시스템 약관이 저장되었습니다.', 'success');
       }
     } catch (e) {
-      alert('저장 중 오류가 발생했습니다.');
+      toast('저장 중 오류가 발생했습니다.', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -92,14 +152,15 @@ const SecuritySettings: React.FC = () => {
       document.body.appendChild(a);
       a.click();
       a.remove();
+      toast('데이터베이스 백업을 다운로드합니다.', 'success');
     } catch (e) {
-      alert('백업 다운로드 중 오류가 발생했습니다.');
+      toast('백업 다운로드 중 오류가 발생했습니다.', 'error');
     }
   };
 
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
+
   const handleRestartService = async () => {
-    if (!confirm('정말로 서비스를 재기동하시겠습니까? 약 10~20초간 서비스 이용이 불가능할 수 있습니다.')) return;
-    
     try {
       const res = await fetch('/api/system/restart', {
         method: 'POST',
@@ -108,11 +169,13 @@ const SecuritySettings: React.FC = () => {
         }
       });
       if (res.ok) {
-        alert('재기동 요청을 보냈습니다. 서버가 다시 시작될 때까지 잠시만 기다려 주세요.');
+        toast('재기동 요청을 보냈습니다. 서버가 다시 시작될 때까지 잠시만 기다려 주세요.', 'info');
         setTimeout(() => window.location.reload(), 5000);
       }
     } catch (e) {
-      alert('재기동 요청 중 오류가 발생했습니다.');
+      toast('재기동 요청 중 오류가 발생했습니다.', 'error');
+    } finally {
+      setShowRestartConfirm(false);
     }
   };
 
@@ -134,10 +197,10 @@ const SecuritySettings: React.FC = () => {
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                <Settings size={20} className="text-indigo-600" /> 솔루션 정보
+              <h2 className="text-lg font-black text-slate-900 flex items-center gap-2 whitespace-nowrap">
+                <Settings size={20} className="text-indigo-600 shrink-0" /> 솔루션 정보
               </h2>
-              <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full uppercase">Stable v1.0</span>
+              <Badge variant="primary" className="rounded-full">Stable v1.0</Badge>
             </div>
             
             <div className="space-y-4">
@@ -161,12 +224,13 @@ const SecuritySettings: React.FC = () => {
               <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
                 <ShieldCheck size={20} className="text-emerald-600" /> 인프라 상태
               </h2>
-              <button 
+              <Button 
+                variant="ghost"
+                size="sm"
                 onClick={fetchStatus}
-                className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-all"
               >
                 <RefreshCw size={16} />
-              </button>
+              </Button>
             </div>
 
             <div className="space-y-4">
@@ -213,7 +277,7 @@ const SecuritySettings: React.FC = () => {
               </button>
 
               <button 
-                onClick={handleRestartService}
+                onClick={() => setShowRestartConfirm(true)}
                 className="w-full flex items-center justify-between p-4 bg-red-500/5 hover:bg-red-500/10 rounded-2xl border border-red-500/20 transition-all group"
               >
                 <div className="flex items-center gap-3">
@@ -244,14 +308,13 @@ const SecuritySettings: React.FC = () => {
               <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
                 <FileText size={20} className="text-amber-600" /> 서비스 이용약관 관리
               </h2>
-              <button 
+              <Button 
                 onClick={handleSaveTerms}
-                disabled={isSaving}
-                className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-black hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:bg-slate-300"
+                isLoading={isSaving}
+                leftIcon={<Save size={16} />}
               >
-                {isSaving ? <RefreshCw className="animate-spin" size={16} /> : <Save size={16} />}
                 설정 저장
-              </button>
+              </Button>
             </div>
 
             <div className="flex-1 flex flex-col min-h-[500px]">
@@ -276,6 +339,114 @@ const SecuritySettings: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* 감사 로그 조회 (Audit Logs) */}
+      <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-700">
+        <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
+              <History size={24} />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-slate-900">시스템 감사 로그</h2>
+              <p className="text-xs font-bold text-slate-400 mt-0.5 uppercase tracking-widest">Audit Logs</p>
+            </div>
+          </div>
+          <Button 
+            variant="ghost" 
+            onClick={() => fetchAuditLogs(logsPage)}
+            isLoading={logsLoading}
+          >
+            <RefreshCw size={18} />
+          </Button>
+        </div>
+
+        <Table
+          headers={['일시', '사용자', '활동', '대상', '세부 정보']}
+        >
+          {logsLoading && Array(10).fill(0).map((_, i) => (
+            <tr key={i} className="animate-pulse">
+              <td className="px-8 py-4"><div className="h-4 w-32 bg-slate-100 rounded"></div></td>
+              <td className="px-8 py-4"><div className="h-4 w-20 bg-slate-100 rounded"></div></td>
+              <td className="px-8 py-4"><div className="h-4 w-24 bg-slate-100 rounded"></div></td>
+              <td className="px-8 py-4"><div className="h-4 w-20 bg-slate-100 rounded"></div></td>
+              <td className="px-8 py-4"><div className="h-4 w-40 bg-slate-100 rounded"></div></td>
+            </tr>
+          ))}
+
+          {!logsLoading && logs.map((log) => (
+            <tr key={log.id} className="hover:bg-slate-50/30 transition-colors">
+              <td className="px-8 py-4">
+                <p className="text-xs font-bold text-slate-400">{new Date(log.timestamp).toLocaleString()}</p>
+              </td>
+              <td className="px-8 py-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500">
+                    <User size={12} />
+                  </div>
+                  <span className="text-sm font-bold text-slate-700">{log.username}</span>
+                </div>
+              </td>
+              <td className="px-8 py-4">
+                <Badge variant={log.action.includes('삭제') ? 'danger' : (log.action.includes('수정') || log.action.includes('변경') ? 'warning' : 'primary')}>
+                  {log.action}
+                </Badge>
+              </td>
+              <td className="px-8 py-4">
+                <span className="text-xs font-black text-slate-400 uppercase tracking-tighter bg-slate-100 px-2 py-1 rounded-md">{log.targetType}</span>
+              </td>
+              <td className="px-8 py-4">
+                <p className="text-xs font-medium text-slate-500 truncate max-w-[200px]">{log.details || '-'}</p>
+              </td>
+            </tr>
+          ))}
+
+          {!logsLoading && logs.length === 0 && (
+            <tr>
+              <td colSpan={5}>
+                <EmptyState 
+                  icon={<Activity />}
+                  title="로그 내역이 없습니다."
+                />
+              </td>
+            </tr>
+          )}
+        </Table>
+
+        {logsPagination && (
+          <div className="pb-8">
+            <Pagination 
+              currentPage={logsPage}
+              totalPages={logsPagination.totalPages}
+              onPageChange={setLogsPage}
+              disabled={logsLoading}
+            />
+          </div>
+        )}
+      </div>
+
+      <Modal
+        isOpen={showRestartConfirm}
+        onClose={() => setShowRestartConfirm(false)}
+        title="서비스 재기동"
+        size="sm"
+        footer={
+          <>
+            <Button variant="secondary" className="flex-1" onClick={() => setShowRestartConfirm(false)}>취소</Button>
+            <Button variant="danger" className="flex-1" onClick={handleRestartService}>재기동</Button>
+          </>
+        }
+      >
+        <div className="text-center">
+          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle size={32} />
+          </div>
+          <p className="text-sm text-slate-500 leading-relaxed">
+            정말로 서비스를 재기동하시겠습니까?<br/>
+            약 10~20초간 서비스 이용이 불가능할 수 있습니다.
+          </p>
+        </div>
+      </Modal>
     </div>
   );
 };

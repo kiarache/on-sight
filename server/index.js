@@ -40,10 +40,10 @@ app.use(cors({
   credentials: true
 }));
 
-// 보안: 전역 Rate Limiting (15분당 100회)
+// 보안: 전역 Rate Limiting (15분당 300회 - 자동 새로고침 고려)
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 300,
   message: { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' },
   standardHeaders: true,
   legacyHeaders: false

@@ -2,11 +2,28 @@ const prisma = require('../config/db');
 
 const getAuditLogs = async (req, res, next) => {
   try {
-    const logs = await prisma.auditLog.findMany({
-      orderBy: { timestamp: 'desc' },
-      take: 100
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const [logs, total] = await Promise.all([
+      prisma.auditLog.findMany({
+        orderBy: { timestamp: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.auditLog.count()
+    ]);
+
+    res.json({
+      logs,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
     });
-    res.json(logs);
   } catch (e) {
     next(e);
   }

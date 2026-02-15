@@ -103,12 +103,12 @@ const AdminDashboard: React.FC<Props> = ({ projects }) => {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat) => (
-          <div key={stat.label} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 transition-all hover:border-indigo-200">
-            <div className={`w-10 h-10 ${stat.bg} rounded-xl flex items-center justify-center`}>
+          <div key={stat.label} className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3 sm:gap-4 transition-all hover:border-indigo-200">
+            <div className={`w-10 h-10 shrink-0 ${stat.bg} rounded-xl flex items-center justify-center`}>
               {stat.icon}
             </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{stat.label}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">{stat.label}</p>
               <p className="text-xl font-bold text-slate-900">{stat.value}</p>
             </div>
           </div>
@@ -122,37 +122,45 @@ const AdminDashboard: React.FC<Props> = ({ projects }) => {
             <span className="text-[10px] text-slate-400 font-medium">업데이트: {lastRefreshed.toLocaleTimeString()}</span>
           </div>
           <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={barChartData} margin={{ bottom: 40 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fontSize: 13, fill: '#64748b', fontWeight: 700 }} 
-                  interval={0}
-                  angle={-15}
-                  textAnchor="end"
-                />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} unit="%" />
-                <Tooltip 
-                  cursor={{ fill: '#f8fafc' }}
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '14px', fontWeight: 700 }}
-                />
-                <Bar dataKey="progress" radius={[6, 6, 0, 0]} barSize={40}>
-                  {barChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.progress > 90 ? '#10b981' : '#6366f1'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            {barChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={200}>
+                <BarChart data={barChartData} margin={{ bottom: 40 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 13, fill: '#64748b', fontWeight: 700 }}
+                    interval={0}
+                    angle={-15}
+                    textAnchor="end"
+                  />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} unit="%" />
+                  <Tooltip
+                    cursor={{ fill: '#f8fafc' }}
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '14px', fontWeight: 700 }}
+                  />
+                  <Bar dataKey="progress" radius={[6, 6, 0, 0]} barSize={40}>
+                    {barChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.progress > 90 ? '#10b981' : '#6366f1'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                <Target size={32} className="mb-2 opacity-30" />
+                <p className="text-sm font-medium">등록된 프로젝트가 없습니다</p>
+                <p className="text-xs mt-1">사업을 등록하면 진척률이 여기에 표시됩니다.</p>
+              </div>
+            )}
           </div>
         </div>
 
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
           <h3 className="text-base font-bold text-slate-800 mb-6">프로젝트 상태</h3>
           <div className="flex-1 min-h-[220px] relative">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={200}>
               <PieChart>
                 <Pie
                   data={pieData}
@@ -170,7 +178,7 @@ const AdminDashboard: React.FC<Props> = ({ projects }) => {
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <span className="text-2xl font-bold text-slate-800">{projects.length}</span>
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Projects</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">프로젝트</span>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2 mt-4">

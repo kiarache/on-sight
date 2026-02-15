@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Camera, Send, Loader2, X, MapPin, ChevronLeft, ImagePlus, User, Briefcase, FileText } from 'lucide-react';
 import { Project, Partner } from '@/types';
 import { compressImage } from '@/utils/imageUtils';
+import { useToast } from '@/components/Toast';
 
 interface PhotoSlot {
   label: string;
@@ -20,6 +21,7 @@ interface Props {
 const FieldSubmission: React.FC<Props> = ({ projects, partners, onAddReport }) => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   const initialProjectId = searchParams.get('pid') || '';
   const initialSiteId = searchParams.get('sid') || '';
@@ -100,7 +102,7 @@ const FieldSubmission: React.FC<Props> = ({ projects, partners, onAddReport }) =
     const uploadedPhotosCount = photoSlots.filter(s => !!s.photo).length;
 
     if (!selectedProjectId || !selectedSiteId || !selectedPartnerId || !technicianName || uploadedPhotosCount === 0) {
-      alert('필수 정보를 입력하고 사진을 1장 이상 등록해주세요.');
+      toast('필수 정보를 입력하고 사진을 1장 이상 등록해주세요.', 'error');
       return;
     }
 
@@ -141,7 +143,7 @@ const FieldSubmission: React.FC<Props> = ({ projects, partners, onAddReport }) =
       await onAddReport(selectedProjectId, formData);
       navigate('/');
     } catch (err: any) {
-      alert('제출 중 오류가 발생했습니다: ' + err.message);
+      toast('제출 중 오류가 발생했습니다: ' + err.message, 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -153,7 +155,7 @@ const FieldSubmission: React.FC<Props> = ({ projects, partners, onAddReport }) =
         <button onClick={() => navigate(-1)} className="p-3 bg-white border border-slate-200 rounded-2xl text-slate-500 shadow-sm active:scale-90 transition-all"><ChevronLeft size={20} /></button>
         <div>
           <h1 className="text-xl font-black text-slate-900 tracking-tight">현장 보고서 작성</h1>
-          <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-0.5 leading-none">Field Evidence Submission</p>
+          <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-0.5 leading-none">현장 증적 보고서</p>
         </div>
       </header>
 
@@ -197,7 +199,7 @@ const FieldSubmission: React.FC<Props> = ({ projects, partners, onAddReport }) =
         {/* Photos Section */}
         <div className="bg-white p-5 sm:p-6 rounded-[32px] border border-slate-200 shadow-sm space-y-5">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Evidence Photos</h2>
+            <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">증적 사진</h2>
             <span className="text-[10px] font-black text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-lg">1장 이상 필수</span>
           </div>
           

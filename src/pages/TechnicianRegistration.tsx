@@ -1,8 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { db } from '@/services/db';
 import { UserPlus, Building2, User, Phone, CheckCircle2, ChevronLeft, Loader2, Key, Check, X, AlertCircle } from 'lucide-react';
 import { Partner, Technician } from '@/types';
+import { useToast } from '@/components/Toast';
+import PasswordStrengthIndicator from '@/components/PasswordStrengthIndicator';
 
 interface Props {
   onAddTechnician: (partnerId: string, tech: Technician) => void;
@@ -11,6 +14,7 @@ interface Props {
 
 const TechnicianRegistration: React.FC<Props> = ({ onAddTechnician }) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const pid = searchParams.get('pid');
   
@@ -45,7 +49,7 @@ const TechnicianRegistration: React.FC<Props> = ({ onAddTechnician }) => {
 
   const handleCheckUsername = async () => {
     if (!username.trim()) {
-      alert('아이디를 입력해주세요.');
+      toast('아이디를 입력해주세요.', 'error');
       return;
     }
     
@@ -55,7 +59,7 @@ const TechnicianRegistration: React.FC<Props> = ({ onAddTechnician }) => {
       const data = await res.json();
       setUsernameCheckStatus(data.available ? 'available' : 'taken');
     } catch (error) {
-      alert('중복 확인 중 오류가 발생했습니다.');
+      toast('중복 확인 중 오류가 발생했습니다.', 'error');
       setUsernameCheckStatus('idle');
     }
   };
@@ -64,7 +68,7 @@ const TechnicianRegistration: React.FC<Props> = ({ onAddTechnician }) => {
     e.preventDefault();
     
     if (usernameCheckStatus !== 'available') {
-      alert('아이디 중복 확인을 먼저 진행해주세요.');
+      toast('아이디 중복 확인을 먼저 진행해주세요.', 'error');
       return;
     }
     
@@ -95,7 +99,7 @@ const TechnicianRegistration: React.FC<Props> = ({ onAddTechnician }) => {
       onAddTechnician(partnerId, newTech);
       setIsSuccess(true);
     } catch (err: any) {
-      alert('등록 중 오류가 발생했습니다: ' + err.message);
+      toast('등록 중 오류가 발생했습니다: ' + err.message, 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -224,6 +228,7 @@ const TechnicianRegistration: React.FC<Props> = ({ onAddTechnician }) => {
                 <Key size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="PW 입력" className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-600 text-sm font-bold" required />
              </div>
+             <PasswordStrengthIndicator password={password} />
           </div>
 
           <div>
@@ -256,3 +261,4 @@ const TechnicianRegistration: React.FC<Props> = ({ onAddTechnician }) => {
 };
 
 export default TechnicianRegistration;
+

@@ -1,12 +1,13 @@
 
 import { Project, Partner, User, AuditLog } from '@/types';
+export type { User } from '@/types';
 
 const API_BASE_URL = '/api';
 
 class DBService {
   private token: string | null = localStorage.getItem('onsight_token');
 
-  private async fetchAPI(endpoint: string, options: RequestInit = {}) {
+  private async fetchAPI(endpoint: string, options: RequestInit = {}, timeout?: number) {
     const headers: any = {
       ...options.headers
     };
@@ -20,9 +21,10 @@ class DBService {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
-    // 타임아웃 컨트롤러 추가 (5초)
+    // 타임아웃: 파일 업로드는 60초, 일반 요청은 10초
+    const timeoutMs = timeout ?? (options.body instanceof FormData ? 60000 : 10000);
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, { 
